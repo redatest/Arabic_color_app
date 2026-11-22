@@ -337,7 +337,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     private fun String.mapDigits(): String = map { char ->
         if (char in '0'..'9') ('٠'.code + (char - '0')).toChar() else char
-    }
+    }.joinToString("")
 
     private fun makeButton(text: String, color: String) = Button(this).apply {
         this.text = text
