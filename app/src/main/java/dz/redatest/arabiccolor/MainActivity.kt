@@ -290,7 +290,7 @@ class MainActivity : Activity() {
     }
 
     private fun startTrainGame() {
-        trainSequence = MutableList(3) { Random.nextInt(colors.size) }
+        trainSequence = colors.indices.shuffled().take(3).toMutableList()
         trainStep = 0
         renderTrainStep()
     }
