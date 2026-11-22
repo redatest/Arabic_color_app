@@ -290,9 +290,15 @@ class MainActivity : Activity() {
     }
 
     private fun startTrainGame() {
-        resetPage("قِطَارُ الأَلْوَانِ", "أَكْمِلِ القِطَارَ بِاللَّوْنِ الَّذِي يَطْلُبُهُ الأَرْنَبُ")
-        roundTarget = Random.nextInt(colors.size)
-        addRabbitHint("هَيَّا نُكْمِلُ القِطَارَ!")
+        trainSequence = MutableList(3) { Random.nextInt(colors.size) }
+        trainStep = 0
+        renderTrainStep()
+    }
+
+    private fun renderTrainStep() {
+        resetPage("قِطَارُ الأَلْوَانِ", "أَكْمِلِ القِطَارَ بِثَلَاثَةِ أَلْوَانٍ مُخْتَلِفَةٍ")
+        roundTarget = trainSequence[trainStep]
+        addRabbitHint("هَيَّا نَمْلَأُ العَرَبَةَ رَقْمَ " + (trainStep + 1).toString().mapDigits())
         addTargetCard(roundTarget, "question_")
         val train = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
@@ -300,21 +306,43 @@ class MainActivity : Activity() {
             background = rounded("#FFFFFF", 22); setPadding(dp(8), dp(16), dp(8), dp(16))
         }
         train.addView(TextView(this).apply { text = "🚂"; textSize = 43f; gravity = Gravity.CENTER })
-        repeat(3) {
-            train.addView(TextView(this).apply {
-                text = "★"; textSize = 27f; gravity = Gravity.CENTER
-                setTextColor(AColor.LTGRAY); background = rounded("#EDEDF2", 12)
-                setPadding(dp(8), dp(8), dp(8), dp(8))
-            }, LinearLayout.LayoutParams(0, dp(62), 1f).apply { setMargins(dp(3), 0, dp(3), 0) })
+        repeat(3) { slot ->
+            val wagon = LinearLayout(this).apply {
+                gravity = Gravity.CENTER
+                background = rounded(if (slot < trainStep) "#E7F8EC" else "#EDEDF2", 12)
+            }
+            if (slot < trainStep) {
+                wagon.addView(ColorDot(this@MainActivity, colors[trainSequence[slot]].color),
+                    LinearLayout.LayoutParams(dp(48), dp(48)))
+            } else {
+                wagon.addView(TextView(this@MainActivity).apply {
+                    text = "؟"; textSize = 26f; gravity = Gravity.CENTER
+                    setTextColor(AColor.GRAY)
+                })
+            }
+            train.addView(wagon, LinearLayout.LayoutParams(0, dp(62), 1f).apply {
+                setMargins(dp(3), 0, dp(3), 0)
+            })
         }
-        page.addView(train, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10); bottomMargin = dp(12) })
+        page.addView(train, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(10); bottomMargin = dp(12)
+        })
         val grid = GridLayout(this).apply { columnCount = 2; useDefaultMargins = false }
         colors.indices.shuffled().take(6).forEachIndexed { i, index ->
             val tile = colorTile(colors[index], false) { }
             tile.setOnClickListener {
                 if (index == roundTarget) {
-                    reward("train"); roundSuccess { startTrainGame() }
-                } else playClip("try_again")
+                    trainStep++
+                    if (trainStep >= trainSequence.size) {
+                        reward("train")
+                        roundSuccess { startTrainGame() }
+                    } else {
+                        renderTrainStep()
+                    }
+                } else {
+                    playClip("try_again")
+                    bounce(tile)
+                }
             }
             grid.addView(tile, GridLayout.LayoutParams().apply {
                 width = 0; height = dp(92); columnSpec = GridLayout.spec(i % 2, 1f)
@@ -322,7 +350,7 @@ class MainActivity : Activity() {
             })
         }
         page.addView(grid)
-        playClips(listOf("game_train", "question_" + colors[roundTarget].audio))
+        if (trainStep == 0) playClips(listOf("game_train", "question_" + colors[roundTarget].audio))
     }
 
     private fun startListenGame() {
