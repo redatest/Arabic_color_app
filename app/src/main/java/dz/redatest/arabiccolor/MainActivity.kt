@@ -27,6 +27,7 @@ class MainActivity : Activity() {
         val color: Int get() = AColor.parseColor(hex)
     }
     private data class Toy(val emoji: String, val colorIndex: Int)
+    private data class MenuItem(val emoji: String, val label: String, val color: String, val action: () -> Unit)
     private val colors = listOf(
         ColorCard("أَحْمَر", "#F04452", "red"),
         ColorCard("أَزْرَق", "#3185F5", "blue"),
@@ -164,15 +165,15 @@ class MainActivity : Activity() {
         page.addView(sectionTitle("مَاذَا تُرِيدُ أَنْ تَفْعَلَ؟"))
         val grid = GridLayout(this).apply { columnCount = 2; useDefaultMargins = false }
         val items = listOf(
-            Triple("🎨", "تَعَلَّمِ الأَلْوَانَ", "#7A83E8") { showLearn() },
-            Triple("🎈", "فَقِّعِ البَالُونَ", "#F06B86") { startBalloonGame() },
-            Triple("🔎", "اِبْحَثْ عَنِ اللَّوْنِ", "#4BBE9B") { startFindGame() },
-            Triple("🥚", "المُفَاجَأَةُ", "#A77BE8") { showSurprise() },
-            Triple("🚂", "قِطَارُ الأَلْوَانِ", "#F2A343") { startTrainGame() },
-            Triple("👂", "اِسْمَعْ وَاخْتَرْ", "#4CA6D8") { startListenGame() }
+            MenuItem("🎨", "تَعَلَّمِ الأَلْوَانَ", "#7A83E8") { showLearn() },
+            MenuItem("🎈", "فَقِّعِ البَالُونَ", "#F06B86") { startBalloonGame() },
+            MenuItem("🔎", "اِبْحَثْ عَنِ اللَّوْنِ", "#4BBE9B") { startFindGame() },
+            MenuItem("🥚", "المُفَاجَأَةُ", "#A77BE8") { showSurprise() },
+            MenuItem("🚂", "قِطَارُ الأَلْوَانِ", "#F2A343") { startTrainGame() },
+            MenuItem("👂", "اِسْمَعْ وَاخْتَرْ", "#4CA6D8") { startListenGame() }
         )
         items.forEachIndexed { index, item ->
-            grid.addView(menuTile(item.first, item.second, item.third, item.fourth), GridLayout.LayoutParams().apply {
+            grid.addView(menuTile(item.emoji, item.label, item.color, item.action), GridLayout.LayoutParams().apply {
                 width = 0; height = dp(116)
                 columnSpec = GridLayout.spec(index % 2, 1f)
                 rowSpec = GridLayout.spec(index / 2)
@@ -211,8 +212,7 @@ class MainActivity : Activity() {
             balloon.setOnClickListener {
                 if (colorIndex == roundTarget) {
                     bounce(balloon); reward("balloon")
-                    playClip("praise")
-                    startBalloonGame()
+                    roundSuccess { startBalloonGame() }
                 } else {
                     balloon.animate().translationY(dp(7).toFloat()).setDuration(100).withEndAction {
                         balloon.animate().translationY(0f).setDuration(100).start()
@@ -240,7 +240,7 @@ class MainActivity : Activity() {
             val tile = objectTile(toy)
             tile.setOnClickListener {
                 if (toy.colorIndex == roundTarget) {
-                    bounce(tile); reward("find"); playClip("praise"); startFindGame()
+                    bounce(tile); reward("find"); roundSuccess { startFindGame() }
                 } else playClip("try_again")
             }
             grid.addView(tile, GridLayout.LayoutParams().apply {
@@ -310,7 +310,7 @@ class MainActivity : Activity() {
             val tile = colorTile(colors[index], false) { }
             tile.setOnClickListener {
                 if (index == roundTarget) {
-                    reward("train"); playClip("praise"); startTrainGame()
+                    reward("train"); roundSuccess { startTrainGame() }
                 } else playClip("try_again")
             }
             grid.addView(tile, GridLayout.LayoutParams().apply {
@@ -335,7 +335,7 @@ class MainActivity : Activity() {
             val tile = colorTile(colors[index], false) { }
             tile.setOnClickListener {
                 if (index == roundTarget) {
-                    reward("listen"); playClip("praise"); startListenGame()
+                    reward("listen"); roundSuccess { startListenGame() }
                 } else playClip("try_again")
             }
             grid.addView(tile, GridLayout.LayoutParams().apply {
@@ -466,6 +466,20 @@ class MainActivity : Activity() {
         text = label; textSize = 16f; isAllCaps = false; minHeight = dp(48)
         setTextColor(AColor.WHITE); background = gradient(color, lighten(color), 18)
         stateListAnimator = null; setOnClickListener { action(); bounce(this) }
+    }
+
+    private fun roundSuccess(next: () -> Unit) {
+        resetPage("أَحْسَنْتَ!", "إِجَابَةٌ رَائِعَةٌ! لَقَدْ كَسَبْتَ نَجْمَةً")
+        addRabbitHint("أَنْتَ بَطَلٌ!")
+        page.addView(TextView(this).apply {
+            text = "⭐  ⭐  ⭐"
+            textSize = 54f
+            gravity = Gravity.CENTER
+            setPadding(0, dp(18), 0, dp(18))
+        })
+        page.addView(makeButton("هَيَّا نَلْعَبْ مَرَّةً أُخْرَى", "#F08A45", next),
+            LinearLayout.LayoutParams(-1, dp(56)).apply { topMargin = dp(10) })
+        playClip("praise")
     }
 
     private fun reward(game: String) {
