@@ -226,6 +226,7 @@ class MainActivity : Activity() {
             })
         }
         page.addView(grid)
+        playClips(listOf("game_balloon", "question_" + colors[roundTarget].audio))
     }
 
     private fun startFindGame() {
@@ -249,12 +250,14 @@ class MainActivity : Activity() {
             })
         }
         page.addView(grid)
+        playClips(listOf("game_find", "find_" + colors[roundTarget].audio))
     }
 
     private fun showSurprise() {
         resetPage("صُنْدُوقُ المُفَاجَآتِ", "اِلْمَسِ البَيْضَةَ السِّحْرِيَّةَ لِتَكْتَشِفَ هَدِيَّتَكَ!")
         addRabbitHint("مَاذَا تُخْفِي البَيْضَةُ؟")
         surpriseEmoji = stickers.filter { it !in collected }.randomOrNull() ?: stickers.random()
+        playClip("game_surprise")
         val egg = EggView(this)
         egg.setOnClickListener {
             if (surpriseEmoji !in collected) {
@@ -319,6 +322,7 @@ class MainActivity : Activity() {
             })
         }
         page.addView(grid)
+        playClips(listOf("game_train", "question_" + colors[roundTarget].audio))
     }
 
     private fun startListenGame() {
@@ -344,6 +348,7 @@ class MainActivity : Activity() {
             })
         }
         page.addView(grid)
+        playClips(listOf("game_listen", "color_" + colors[roundTarget].audio))
     }
 
     private fun showCollection() {
@@ -493,6 +498,12 @@ class MainActivity : Activity() {
 
     private fun saveProgress() {
         prefs.edit().putInt("stars", stars).putStringSet("collected", collected.toSet()).apply()
+    }
+
+    private fun playClips(names: List<String>) {
+        audioQueue.clear()
+        audioQueue.addAll(names)
+        playNext()
     }
 
     private fun playAllColors() {
