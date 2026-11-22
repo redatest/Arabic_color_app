@@ -170,7 +170,8 @@ class MainActivity : Activity() {
             MenuItem("🔎", "اِبْحَثْ عَنِ اللَّوْنِ", "#4BBE9B") { startFindGame() },
             MenuItem("🥚", "المُفَاجَأَةُ", "#A77BE8") { showSurprise() },
             MenuItem("🚂", "قِطَارُ الأَلْوَانِ", "#F2A343") { startTrainGame() },
-            MenuItem("👂", "اِسْمَعْ وَاخْتَرْ", "#4CA6D8") { startListenGame() }
+            MenuItem("👂", "اِسْمَعْ وَاخْتَرْ", "#4CA6D8") { startListenGame() },
+            MenuItem("🧩", "اِخْتَرِ اللَّوْنَ", "#D78B58") { startClassicQuiz() }
         )
         items.forEachIndexed { index, item ->
             grid.addView(menuTile(item.emoji, item.label, item.color, item.action), GridLayout.LayoutParams().apply {
@@ -195,6 +196,32 @@ class MainActivity : Activity() {
             grid.addView(tile, GridLayout.LayoutParams().apply {
                 width = 0; height = dp(126); columnSpec = GridLayout.spec(index % 2, 1f)
                 rowSpec = GridLayout.spec(index / 2); setMargins(dp(5), dp(5), dp(5), dp(5))
+            })
+        }
+        page.addView(grid)
+    }
+
+    private fun startClassicQuiz() {
+        resetPage("لُعْبَةُ اِخْتِيَارِ اللَّوْنِ", "اِسْمَعِ السُّؤَالَ ثُمَّ اِلْمَسِ اللَّوْنَ الصَّحِيحَ")
+        roundTarget = Random.nextInt(colors.size)
+        addRabbitHint("هَيَّا نَخْتَبِرْ ذَاكِرَتَكَ!")
+        addTargetCard(roundTarget, "question_")
+        val indices = (colors.indices.filter { it != roundTarget }.shuffled().take(5) + roundTarget).shuffled()
+        val grid = GridLayout(this).apply { columnCount = 2; useDefaultMargins = false }
+        indices.forEachIndexed { i, index ->
+            val tile = colorTile(colors[index], true) { }
+            tile.setOnClickListener {
+                if (index == roundTarget) {
+                    reward("classic")
+                    roundSuccess { startClassicQuiz() }
+                } else {
+                    playClip("try_again")
+                    bounce(tile)
+                }
+            }
+            grid.addView(tile, GridLayout.LayoutParams().apply {
+                width = 0; height = dp(112); columnSpec = GridLayout.spec(i % 2, 1f)
+                rowSpec = GridLayout.spec(i / 2); setMargins(dp(5), dp(5), dp(5), dp(5))
             })
         }
         page.addView(grid)
