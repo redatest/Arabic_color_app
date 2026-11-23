@@ -118,6 +118,20 @@ class MainActivity : Activity() {
             setPadding(dp(16), dp(4), dp(16), dp(12))
         }
         root.addView(page, LinearLayout.LayoutParams(-1, -2))
+        page.setOnHierarchyChangeListener(object : ViewGroup.OnHierarchyChangeListener {
+            private var index = 0
+            override fun onChildViewAdded(parent: View?, child: View?) {
+                child ?: return
+                val delay = (index++ * 55L).coerceAtMost(440L)
+                child.alpha = 0f
+                child.translationY = dp(22).toFloat()
+                child.scaleX = .96f
+                child.scaleY = .96f
+                child.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+                    .setStartDelay(delay).setDuration(360).setInterpolator(android.view.animation.OvershootInterpolator(0.8f)).start()
+            }
+            override fun onChildViewRemoved(parent: View?, child: View?) {}
+        })
         addBottomNavigation()
     }
 
@@ -670,30 +684,90 @@ class MainActivity : Activity() {
         override fun onDraw(canvas: Canvas) {
             canvas.save()
             canvas.scale(width / 190f, height / 220f)
-            canvas.rotate(-12f, 95f, 115f)
-            p.color = AColor.argb(95, 5, 10, 28)
-            canvas.drawOval(28f, 177f, 165f, 211f, p)
-            p.shader = LinearGradient(75f, 155f, 132f, 210f, AColor.rgb(91,129,218), AColor.rgb(25,48,112), Shader.TileMode.CLAMP)
-            canvas.drawRoundRect(66f,155f,139f,211f,17f,17f,p); p.shader = null
-            val hand = Path().apply {
-                moveTo(64f,164f); cubicTo(48f,151f,44f,134f,51f,113f); lineTo(63f,83f)
-                cubicTo(67f,72f,82f,74f,85f,87f); lineTo(87f,105f); lineTo(91f,38f)
-                cubicTo(93f,16f,119f,14f,124f,39f); lineTo(126f,104f)
-                cubicTo(133f,91f,153f,94f,154f,112f); cubicTo(169f,112f,176f,130f,164f,145f)
-                cubicTo(157f,158f,146f,170f,133f,178f); lineTo(91f,187f)
-                cubicTo(78f,186f,69f,178f,64f,164f); close()
+            canvas.rotate(-9f, 95f, 120f)
+
+            // Wrist and forearm, fully opaque and joined to the palm
+            p.shader = LinearGradient(18f, 142f, 112f, 198f,
+                AColor.rgb(255, 205, 166), AColor.rgb(198, 105, 75), Shader.TileMode.CLAMP)
+            canvas.drawRoundRect(4f, 139f, 105f, 199f, 28f, 28f, p)
+            p.shader = null
+
+            // Closed fist silhouette with the thumb clearly raised at the side
+            val fist = Path().apply {
+                moveTo(48f, 157f)
+                cubicTo(39f, 147f, 35f, 132f, 40f, 116f)
+                lineTo(55f, 75f)
+                cubicTo(60f, 59f, 77f, 58f, 85f, 71f)
+                cubicTo(89f, 77f, 88f, 85f, 85f, 94f)
+                lineTo(81f, 105f)
+                cubicTo(91f, 98f, 105f, 94f, 119f, 98f)
+                cubicTo(142f, 99f, 157f, 111f, 159f, 130f)
+                cubicTo(162f, 150f, 147f, 169f, 127f, 178f)
+                lineTo(82f, 184f)
+                cubicTo(66f, 183f, 54f, 173f, 48f, 157f)
+                close()
             }
-            p.setShadowLayer(9f,2f,7f,AColor.argb(100,0,0,0))
-            p.shader = LinearGradient(65f,38f,155f,180f,AColor.rgb(255,224,190),AColor.rgb(185,104,65),Shader.TileMode.CLAMP)
-            canvas.drawPath(hand,p); p.clearShadowLayer(); p.shader = null
-            p.style = Paint.Style.STROKE; p.strokeWidth = 3f; p.color = AColor.rgb(145,77,51)
-            canvas.drawPath(hand,p); p.style = Paint.Style.FILL
-            p.shader = LinearGradient(65f,60f,106f,145f,AColor.argb(190,255,245,224),AColor.argb(0,255,245,224),Shader.TileMode.CLAMP)
-            canvas.drawOval(66f,83f,104f,151f,p); p.shader = null
-            p.color = AColor.argb(130,130,66,45); p.strokeWidth = 2.2f
-            canvas.drawLine(129f,115f,146f,119f,p); canvas.drawLine(124f,133f,143f,138f,p)
-            p.color = AColor.rgb(255,220,199); canvas.drawRoundRect(98f,20f,117f,47f,8f,8f,p)
-            p.color = AColor.argb(110,255,255,255); canvas.drawRoundRect(101f,22f,113f,29f,4f,4f,p)
+            p.setShadowLayer(12f, 2f, 8f, AColor.argb(125, 0, 0, 0))
+            p.shader = LinearGradient(42f, 67f, 151f, 180f,
+                AColor.rgb(255, 224, 196), AColor.rgb(190, 91, 61), Shader.TileMode.CLAMP)
+            canvas.drawPath(fist, p)
+            p.clearShadowLayer()
+            p.shader = null
+
+            // Four curled fingers: distinct rounded knuckles across the front of the fist
+            val knuckles = arrayOf(
+                floatArrayOf(87f, 101f, 143f, 127f),
+                floatArrayOf(82f, 119f, 151f, 146f),
+                floatArrayOf(76f, 139f, 143f, 165f)
+            )
+            knuckles.forEachIndexed { i, k ->
+                p.setShadowLayer(3f, 1f, 3f, AColor.argb(70, 90, 38, 28))
+                p.shader = LinearGradient(k[0], k[1], k[2], k[3],
+                    AColor.rgb(255, 226 - i * 5, 199 - i * 7),
+                    AColor.rgb(221, 139 - i * 8, 100 - i * 5), Shader.TileMode.CLAMP)
+                canvas.drawRoundRect(k[0], k[1], k[2], k[3], 15f, 15f, p)
+                p.clearShadowLayer()
+            }
+            p.shader = null
+
+            // Raised thumb, attached to the palm on its left edge
+            val thumb = Path().apply {
+                moveTo(46f, 130f)
+                cubicTo(37f, 119f, 31f, 104f, 34f, 88f)
+                lineTo(40f, 47f)
+                cubicTo(42f, 26f, 56f, 14f, 70f, 19f)
+                cubicTo(84f, 23f, 89f, 38f, 84f, 53f)
+                lineTo(75f, 91f)
+                cubicTo(72f, 108f, 66f, 123f, 58f, 137f)
+                close()
+            }
+            p.setShadowLayer(7f, 1f, 4f, AColor.argb(90, 80, 35, 25))
+            p.shader = LinearGradient(38f, 20f, 82f, 130f,
+                AColor.rgb(255, 235, 211), AColor.rgb(205, 111, 76), Shader.TileMode.CLAMP)
+            canvas.drawPath(thumb, p)
+            p.clearShadowLayer()
+            p.shader = null
+
+            // Solid contour and warm highlights; no translucent skin areas
+            p.style = Paint.Style.STROKE
+            p.strokeWidth = 2.8f
+            p.color = AColor.rgb(163, 79, 53)
+            canvas.drawPath(fist, p)
+            canvas.drawPath(thumb, p)
+            p.style = Paint.Style.FILL
+            p.color = AColor.rgb(255, 244, 226)
+            canvas.drawOval(45f, 29f, 61f, 58f, p)
+            p.color = AColor.rgb(255, 235, 211)
+            canvas.drawOval(91f, 104f, 119f, 114f, p)
+
+            // Blue sleeve with a bright cuff seam
+            p.shader = LinearGradient(44f, 170f, 99f, 212f,
+                AColor.rgb(115, 157, 255), AColor.rgb(35, 62, 145), Shader.TileMode.CLAMP)
+            canvas.drawRoundRect(29f, 170f, 104f, 216f, 13f, 13f, p)
+            p.shader = null
+            p.color = AColor.rgb(184, 205, 255)
+            p.strokeWidth = 4f
+            canvas.drawLine(42f, 175f, 91f, 175f, p)
             canvas.restore()
         }
     }
