@@ -15,6 +15,7 @@ import android.media.MediaPlayer
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.view.MotionEvent
@@ -716,9 +717,10 @@ class MainActivity : Activity() {
 
             // Four curled fingers: distinct rounded knuckles across the front of the fist
             val knuckles = arrayOf(
-                floatArrayOf(87f, 101f, 143f, 127f),
-                floatArrayOf(82f, 119f, 151f, 146f),
-                floatArrayOf(76f, 139f, 143f, 165f)
+                floatArrayOf(89f, 96f, 141f, 119f),
+                floatArrayOf(86f, 112f, 151f, 137f),
+                floatArrayOf(81f, 128f, 149f, 153f),
+                floatArrayOf(75f, 145f, 135f, 169f)
             )
             knuckles.forEachIndexed { i, k ->
                 p.setShadowLayer(3f, 1f, 3f, AColor.argb(70, 90, 38, 28))
