@@ -16,6 +16,8 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.FrameLayout
+import android.view.MotionEvent
 import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -52,6 +54,7 @@ class MainActivity : Activity() {
     private val collected = linkedSetOf<String>()
     private lateinit var root: LinearLayout
     private lateinit var page: LinearLayout
+    private lateinit var overlay: FrameLayout
     private var roundTarget = 0
     private var roundObjects: List<Toy> = emptyList()
     private var trainSequence = mutableListOf<Int>()
@@ -62,9 +65,9 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         stars = prefs.getInt("stars", 0)
         collected.addAll(prefs.getStringSet("collected", emptySet()) ?: emptySet())
-        window.statusBarColor = AColor.rgb(255, 247, 235)
-        window.navigationBarColor = AColor.rgb(255, 247, 235)
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        window.statusBarColor = AColor.rgb(13, 20, 43)
+        window.navigationBarColor = AColor.rgb(13, 20, 43)
+        window.decorView.systemUiVisibility = 0
         createRoot()
         showHome()
         playClip("intro")
@@ -74,7 +77,7 @@ class MainActivity : Activity() {
         root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutDirection = View.LAYOUT_DIRECTION_RTL
-            setBackgroundColor(AColor.rgb(255, 247, 235))
+            background = gradient("#111A36", "#293D68", 0)
         }
         val scroll = ScrollView(this).apply {
             isFillViewport = true
@@ -82,7 +85,9 @@ class MainActivity : Activity() {
             setPadding(0, 0, 0, dp(12))
             addView(root)
         }
-        setContentView(scroll)
+        overlay = FrameLayout(this)
+        overlay.addView(scroll, FrameLayout.LayoutParams(-1, -1))
+        setContentView(overlay)
     }
 
     private fun resetPage(title: String, subtitle: String = "") {
@@ -97,13 +102,13 @@ class MainActivity : Activity() {
             textSize = 27f
             gravity = Gravity.CENTER
             typeface = Typeface.DEFAULT_BOLD
-            setTextColor(AColor.rgb(57, 55, 79))
+            setTextColor(AColor.WHITE)
         })
         if (subtitle.isNotBlank()) header.addView(TextView(this).apply {
             text = subtitle
             textSize = 15f
             gravity = Gravity.CENTER
-            setTextColor(AColor.rgb(112, 105, 117))
+            setTextColor(AColor.rgb(202, 213, 242))
             setPadding(0, dp(3), 0, dp(5))
         })
         root.addView(header, LinearLayout.LayoutParams(-1, -2))
@@ -122,8 +127,8 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             setPadding(dp(10), dp(8), dp(10), dp(8))
-            background = rounded("#FFFFFF", 24)
-            elevation = dp(5).toFloat()
+            background = gradient("#4656A1", "#202D57", 24)
+            elevation = dp(12).toFloat()
         }
         nav.addView(navButton("🏠  الرَّئِيسِيَّةُ") { showHome() }, LinearLayout.LayoutParams(0, dp(48), 1f))
         nav.addView(navButton("🎁  مَجْمُوعَتِي") { showCollection() }, LinearLayout.LayoutParams(0, dp(48), 1f))
@@ -138,7 +143,8 @@ class MainActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             layoutDirection = View.LAYOUT_DIRECTION_RTL
-            background = gradient("#FFE4A8", "#FFD5E8", 28)
+            background = gradient("#5269B4", "#26375F", 28)
+            elevation = dp(12).toFloat()
             setPadding(dp(12), dp(10), dp(12), dp(10))
         }
         hero.addView(BunnyView(this), LinearLayout.LayoutParams(dp(126), dp(142)))
@@ -146,11 +152,11 @@ class MainActivity : Activity() {
         welcome.addView(TextView(this).apply {
             text = "أَهْلًا يَا صَدِيقِي!"
             textSize = 22f; typeface = Typeface.DEFAULT_BOLD
-            setTextColor(AColor.rgb(75, 61, 91)); gravity = Gravity.CENTER
+            setTextColor(AColor.WHITE); gravity = Gravity.CENTER
         })
         welcome.addView(TextView(this).apply {
             text = "اِخْتَرْ لُعْبَةً وَهَيَّا نَمْرَحْ"
-            textSize = 15f; setTextColor(AColor.rgb(93, 77, 104)); gravity = Gravity.CENTER
+            textSize = 15f; setTextColor(AColor.rgb(218, 226, 255)); gravity = Gravity.CENTER
             setPadding(0, dp(7), 0, 0)
         })
         hero.addView(welcome, LinearLayout.LayoutParams(0, -2, 1f))
@@ -158,7 +164,7 @@ class MainActivity : Activity() {
         val score = TextView(this).apply {
             text = "⭐  " + stars.toString().mapDigits() + "     🎁  " + collected.size.toString().mapDigits()
             textSize = 19f; gravity = Gravity.CENTER; typeface = Typeface.DEFAULT_BOLD
-            setTextColor(AColor.rgb(126, 89, 35)); background = rounded("#FFF1C9", 18)
+            setTextColor(AColor.WHITE); background = gradient("#4D65A7", "#25365F", 18)
             setPadding(dp(12), dp(10), dp(12), dp(10))
         }
         page.addView(score, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
@@ -443,12 +449,12 @@ class MainActivity : Activity() {
         val target = colors[index]
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
-            background = rounded("#FFFFFF", 20); setPadding(dp(12), dp(12), dp(12), dp(12))
+            background = gradient("#526AAE", "#25365D", 20); setPadding(dp(12), dp(12), dp(12), dp(12)); elevation = dp(8).toFloat()
         }
         panel.addView(ColorDot(this, target.color), LinearLayout.LayoutParams(dp(64), dp(64)))
         panel.addView(TextView(this).apply {
             text = target.name; textSize = 25f; typeface = Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER; setTextColor(AColor.rgb(65, 59, 80))
+            gravity = Gravity.CENTER; setTextColor(AColor.WHITE)
         }, LinearLayout.LayoutParams(0, -2, 1f))
         page.addView(panel, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6); bottomMargin = dp(10) })
         playClip(prefix + target.audio)
@@ -457,12 +463,12 @@ class MainActivity : Activity() {
     private fun addRabbitHint(message: String) {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
-            background = gradient("#FFE9F0", "#FFF0C9", 20); setPadding(dp(8), dp(5), dp(8), dp(5))
+            background = gradient("#586EB2", "#293A67", 20); setPadding(dp(8), dp(5), dp(8), dp(5)); elevation = dp(8).toFloat()
         }
         row.addView(BunnyView(this), LinearLayout.LayoutParams(dp(78), dp(82)))
         row.addView(TextView(this).apply {
             text = message; textSize = 19f; typeface = Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER; setTextColor(AColor.rgb(93, 66, 106))
+            gravity = Gravity.CENTER; setTextColor(AColor.WHITE)
         }, LinearLayout.LayoutParams(0, -2, 1f))
         page.addView(row, LinearLayout.LayoutParams(-1, -2))
     }
@@ -471,12 +477,12 @@ class MainActivity : Activity() {
         val item = colors[toy.colorIndex]
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            background = gradient("#FFFFFF", "#F5F0FA", 20)
-            elevation = dp(2).toFloat()
+            background = gradient("#5067A8", "#26365E", 20)
+            elevation = dp(9).toFloat()
             addView(TextView(this@MainActivity).apply { text = toy.emoji; textSize = 43f; gravity = Gravity.CENTER })
             addView(TextView(this@MainActivity).apply {
                 text = item.name; textSize = 16f; gravity = Gravity.CENTER
-                setTextColor(AColor.rgb(80, 73, 91))
+                setTextColor(AColor.WHITE)
             })
         }
     }
@@ -484,14 +490,18 @@ class MainActivity : Activity() {
     private fun colorTile(item: ColorCard, withLabel: Boolean, action: (View) -> Unit): View {
         val tile = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            background = gradient("#FFFFFF", "#F7F2FA", 20)
-            elevation = dp(2).toFloat(); setPadding(dp(5), dp(6), dp(5), dp(6))
+            background = gradient("#536CB2", "#25375F", 20)
+            elevation = dp(12).toFloat(); setPadding(dp(5), dp(6), dp(5), dp(6))
         }
         tile.addView(ColorDot(this, item.color), LinearLayout.LayoutParams(dp(52), dp(52)))
         if (withLabel) tile.addView(TextView(this).apply {
             text = item.name; textSize = 18f; typeface = Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER; setTextColor(AColor.rgb(60, 57, 76))
+            gravity = Gravity.CENTER; setTextColor(AColor.WHITE)
         })
+        tile.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP) playThumbPop()
+            false
+        }
         tile.setOnClickListener { action(tile) }
         return tile
     }
@@ -499,8 +509,8 @@ class MainActivity : Activity() {
     private fun menuTile(emoji: String, label: String, color: String, action: () -> Unit): View {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            background = gradient(color, lighten(color), 22)
-            elevation = dp(3).toFloat(); isClickable = true; isFocusable = true
+            background = gradient(lighten(color), color, 22)
+            elevation = dp(14).toFloat(); isClickable = true; isFocusable = true
             addView(TextView(this@MainActivity).apply { text = emoji; textSize = 37f; gravity = Gravity.CENTER })
             addView(TextView(this@MainActivity).apply {
                 text = label; textSize = 15f; typeface = Typeface.DEFAULT_BOLD
@@ -512,19 +522,19 @@ class MainActivity : Activity() {
 
     private fun sectionTitle(value: String) = TextView(this).apply {
         text = value; textSize = 19f; typeface = Typeface.DEFAULT_BOLD
-        setTextColor(AColor.rgb(74, 66, 88)); gravity = Gravity.CENTER
+        setTextColor(AColor.rgb(226, 233, 255)); gravity = Gravity.CENTER
         setPadding(0, dp(5), 0, dp(5))
     }
 
     private fun navButton(label: String, action: () -> Unit) = Button(this).apply {
         text = label; textSize = 13f; isAllCaps = false
-        setTextColor(AColor.rgb(83, 72, 111)); background = rounded("#F4F0FA", 16)
+        setTextColor(AColor.WHITE); background = gradient("#6479C7", "#344779", 16)
         stateListAnimator = null; setOnClickListener { action() }
     }
 
     private fun makeButton(label: String, color: String, action: () -> Unit) = Button(this).apply {
         text = label; textSize = 16f; isAllCaps = false; minHeight = dp(48)
-        setTextColor(AColor.WHITE); background = gradient(color, lighten(color), 18)
+        setTextColor(AColor.WHITE); background = gradient(lighten(color), color, 18)
         stateListAnimator = null; setOnClickListener { action(); bounce(this) }
     }
 
@@ -620,11 +630,28 @@ class MainActivity : Activity() {
 
     private fun gradient(first: String, second: String, radius: Int) = GradientDrawable(
         GradientDrawable.Orientation.TL_BR,
-        intArrayOf(AColor.parseColor(first), AColor.parseColor(second))
-    ).apply { cornerRadius = dp(radius).toFloat() }
+        intArrayOf(AColor.parseColor(first), AColor.parseColor(second), AColor.parseColor(second))
+    ).apply { cornerRadius = dp(radius).toFloat(); setStroke(dp(1), AColor.argb(95, 210, 224, 255)) }
 
     private fun rounded(color: String, radius: Int) = GradientDrawable().apply {
         setColor(AColor.parseColor(color)); cornerRadius = dp(radius).toFloat()
+        setStroke(dp(1), AColor.argb(100, 220, 230, 255))
+    }
+
+    private fun playThumbPop() {
+        val hand = ThumbPopView(this)
+        overlay.addView(hand, FrameLayout.LayoutParams(dp(190), dp(220), Gravity.CENTER))
+        hand.alpha = 0f
+        hand.scaleX = .22f; hand.scaleY = .22f
+        hand.translationY = dp(150).toFloat()
+        hand.animate().alpha(1f).scaleX(1.12f).scaleY(1.12f).translationY(dp(-28).toFloat())
+            .setDuration(420).withEndAction {
+                hand.animate().scaleX(1f).scaleY(1f).translationY(dp(-45).toFloat())
+                    .setDuration(180).withEndAction {
+                        hand.animate().alpha(0f).translationY(dp(-150).toFloat()).setStartDelay(320)
+                            .setDuration(260).withEndAction { overlay.removeView(hand) }.start()
+                    }.start()
+            }.start()
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
@@ -636,6 +663,39 @@ class MainActivity : Activity() {
         audioQueue.clear()
         player?.release(); player = null
         super.onDestroy()
+    }
+
+    private class ThumbPopView(context: Context) : View(context) {
+        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        override fun onDraw(canvas: Canvas) {
+            canvas.save()
+            canvas.scale(width / 190f, height / 220f)
+            canvas.rotate(-12f, 95f, 115f)
+            p.color = AColor.argb(95, 5, 10, 28)
+            canvas.drawOval(28f, 177f, 165f, 211f, p)
+            p.shader = LinearGradient(75f, 155f, 132f, 210f, AColor.rgb(91,129,218), AColor.rgb(25,48,112), Shader.TileMode.CLAMP)
+            canvas.drawRoundRect(66f,155f,139f,211f,17f,17f,p); p.shader = null
+            val hand = Path().apply {
+                moveTo(64f,164f); cubicTo(48f,151f,44f,134f,51f,113f); lineTo(63f,83f)
+                cubicTo(67f,72f,82f,74f,85f,87f); lineTo(87f,105f); lineTo(91f,38f)
+                cubicTo(93f,16f,119f,14f,124f,39f); lineTo(126f,104f)
+                cubicTo(133f,91f,153f,94f,154f,112f); cubicTo(169f,112f,176f,130f,164f,145f)
+                cubicTo(157f,158f,146f,170f,133f,178f); lineTo(91f,187f)
+                cubicTo(78f,186f,69f,178f,64f,164f); close()
+            }
+            p.setShadowLayer(9f,2f,7f,AColor.argb(100,0,0,0))
+            p.shader = LinearGradient(65f,38f,155f,180f,AColor.rgb(255,224,190),AColor.rgb(185,104,65),Shader.TileMode.CLAMP)
+            canvas.drawPath(hand,p); p.clearShadowLayer(); p.shader = null
+            p.style = Paint.Style.STROKE; p.strokeWidth = 3f; p.color = AColor.rgb(145,77,51)
+            canvas.drawPath(hand,p); p.style = Paint.Style.FILL
+            p.shader = LinearGradient(65f,60f,106f,145f,AColor.argb(190,255,245,224),AColor.argb(0,255,245,224),Shader.TileMode.CLAMP)
+            canvas.drawOval(66f,83f,104f,151f,p); p.shader = null
+            p.color = AColor.argb(130,130,66,45); p.strokeWidth = 2.2f
+            canvas.drawLine(129f,115f,146f,119f,p); canvas.drawLine(124f,133f,143f,138f,p)
+            p.color = AColor.rgb(255,220,199); canvas.drawRoundRect(98f,20f,117f,47f,8f,8f,p)
+            p.color = AColor.argb(110,255,255,255); canvas.drawRoundRect(101f,22f,113f,29f,4f,4f,p)
+            canvas.restore()
+        }
     }
 
     private class ColorDot(context: Context, private val fill: Int) : View(context) {
