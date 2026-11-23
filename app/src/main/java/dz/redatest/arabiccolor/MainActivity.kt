@@ -654,17 +654,25 @@ class MainActivity : Activity() {
     }
 
     private fun playThumbPop() {
-        val hand = ThumbPopView(this)
-        overlay.addView(hand, FrameLayout.LayoutParams(dp(190), dp(220), Gravity.CENTER))
+        val hand = TextView(this).apply {
+            text = "👍"
+            textSize = 112f
+            gravity = Gravity.CENTER
+            includeFontPadding = false
+            setShadowLayer(dp(12).toFloat(), 0f, dp(9).toFloat(), AColor.argb(150, 0, 0, 0))
+            contentDescription = "إِعْجَاب"
+        }
+        overlay.addView(hand, FrameLayout.LayoutParams(dp(190), dp(210), Gravity.CENTER))
         hand.alpha = 0f
-        hand.scaleX = .22f; hand.scaleY = .22f
-        hand.translationY = dp(150).toFloat()
-        hand.animate().alpha(1f).scaleX(1.12f).scaleY(1.12f).translationY(dp(-28).toFloat())
-            .setDuration(420).withEndAction {
-                hand.animate().scaleX(1f).scaleY(1f).translationY(dp(-45).toFloat())
-                    .setDuration(180).withEndAction {
-                        hand.animate().alpha(0f).translationY(dp(-150).toFloat()).setStartDelay(320)
-                            .setDuration(260).withEndAction { overlay.removeView(hand) }.start()
+        hand.scaleX = .25f; hand.scaleY = .25f
+        hand.translationY = dp(145).toFloat()
+        hand.animate().alpha(1f).scaleX(1.16f).scaleY(1.16f).translationY(dp(-24).toFloat())
+            .setDuration(360).setInterpolator(android.view.animation.OvershootInterpolator(1.1f))
+            .withEndAction {
+                hand.animate().scaleX(1f).scaleY(1f).translationY(dp(-38).toFloat())
+                    .setDuration(160).withEndAction {
+                        hand.animate().alpha(0f).translationY(dp(-145).toFloat()).setStartDelay(380)
+                            .setDuration(250).withEndAction { overlay.removeView(hand) }.start()
                     }.start()
             }.start()
     }
@@ -678,100 +686,6 @@ class MainActivity : Activity() {
         audioQueue.clear()
         player?.release(); player = null
         super.onDestroy()
-    }
-
-    private class ThumbPopView(context: Context) : View(context) {
-        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
-        override fun onDraw(canvas: Canvas) {
-            canvas.save()
-            canvas.scale(width / 190f, height / 220f)
-            canvas.rotate(-9f, 95f, 120f)
-
-            // Wrist and forearm, fully opaque and joined to the palm
-            p.shader = LinearGradient(18f, 142f, 112f, 198f,
-                AColor.rgb(255, 205, 166), AColor.rgb(198, 105, 75), Shader.TileMode.CLAMP)
-            canvas.drawRoundRect(4f, 139f, 105f, 199f, 28f, 28f, p)
-            p.shader = null
-
-            // Closed fist silhouette with the thumb clearly raised at the side
-            val fist = Path().apply {
-                moveTo(48f, 157f)
-                cubicTo(39f, 147f, 35f, 132f, 40f, 116f)
-                lineTo(55f, 75f)
-                cubicTo(60f, 59f, 77f, 58f, 85f, 71f)
-                cubicTo(89f, 77f, 88f, 85f, 85f, 94f)
-                lineTo(81f, 105f)
-                cubicTo(91f, 98f, 105f, 94f, 119f, 98f)
-                cubicTo(142f, 99f, 157f, 111f, 159f, 130f)
-                cubicTo(162f, 150f, 147f, 169f, 127f, 178f)
-                lineTo(82f, 184f)
-                cubicTo(66f, 183f, 54f, 173f, 48f, 157f)
-                close()
-            }
-            p.setShadowLayer(12f, 2f, 8f, AColor.argb(125, 0, 0, 0))
-            p.shader = LinearGradient(42f, 67f, 151f, 180f,
-                AColor.rgb(255, 224, 196), AColor.rgb(190, 91, 61), Shader.TileMode.CLAMP)
-            canvas.drawPath(fist, p)
-            p.clearShadowLayer()
-            p.shader = null
-
-            // Four curled fingers: distinct rounded knuckles across the front of the fist
-            val knuckles = arrayOf(
-                floatArrayOf(89f, 96f, 141f, 119f),
-                floatArrayOf(86f, 112f, 151f, 137f),
-                floatArrayOf(81f, 128f, 149f, 153f),
-                floatArrayOf(75f, 145f, 135f, 169f)
-            )
-            knuckles.forEachIndexed { i, k ->
-                p.setShadowLayer(3f, 1f, 3f, AColor.argb(70, 90, 38, 28))
-                p.shader = LinearGradient(k[0], k[1], k[2], k[3],
-                    AColor.rgb(255, 226 - i * 5, 199 - i * 7),
-                    AColor.rgb(221, 139 - i * 8, 100 - i * 5), Shader.TileMode.CLAMP)
-                canvas.drawRoundRect(k[0], k[1], k[2], k[3], 15f, 15f, p)
-                p.clearShadowLayer()
-            }
-            p.shader = null
-
-            // Raised thumb, attached to the palm on its left edge
-            val thumb = Path().apply {
-                moveTo(46f, 130f)
-                cubicTo(37f, 119f, 31f, 104f, 34f, 88f)
-                lineTo(40f, 47f)
-                cubicTo(42f, 26f, 56f, 14f, 70f, 19f)
-                cubicTo(84f, 23f, 89f, 38f, 84f, 53f)
-                lineTo(75f, 91f)
-                cubicTo(72f, 108f, 66f, 123f, 58f, 137f)
-                close()
-            }
-            p.setShadowLayer(7f, 1f, 4f, AColor.argb(90, 80, 35, 25))
-            p.shader = LinearGradient(38f, 20f, 82f, 130f,
-                AColor.rgb(255, 235, 211), AColor.rgb(205, 111, 76), Shader.TileMode.CLAMP)
-            canvas.drawPath(thumb, p)
-            p.clearShadowLayer()
-            p.shader = null
-
-            // Solid contour and warm highlights; no translucent skin areas
-            p.style = Paint.Style.STROKE
-            p.strokeWidth = 2.8f
-            p.color = AColor.rgb(163, 79, 53)
-            canvas.drawPath(fist, p)
-            canvas.drawPath(thumb, p)
-            p.style = Paint.Style.FILL
-            p.color = AColor.rgb(255, 244, 226)
-            canvas.drawOval(45f, 29f, 61f, 58f, p)
-            p.color = AColor.rgb(255, 235, 211)
-            canvas.drawOval(91f, 104f, 119f, 114f, p)
-
-            // Blue sleeve with a bright cuff seam
-            p.shader = LinearGradient(44f, 170f, 99f, 212f,
-                AColor.rgb(115, 157, 255), AColor.rgb(35, 62, 145), Shader.TileMode.CLAMP)
-            canvas.drawRoundRect(29f, 170f, 104f, 216f, 13f, 13f, p)
-            p.shader = null
-            p.color = AColor.rgb(184, 205, 255)
-            p.strokeWidth = 4f
-            canvas.drawLine(42f, 175f, 91f, 175f, p)
-            canvas.restore()
-        }
     }
 
     private class ColorDot(context: Context, private val fill: Int) : View(context) {
