@@ -464,7 +464,7 @@ class MainActivity : Activity() {
         val target = colors[index]
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
-            background = gradient("#526AAE", "#25365D", 20); setPadding(dp(12), dp(12), dp(12), dp(12)); elevation = dp(8).toFloat()
+            background = gradient("#7893E8", "#25365D", 20); setPadding(dp(12), dp(12), dp(12), dp(12)); elevation = dp(15).toFloat(); translationZ = dp(5).toFloat()
         }
         panel.addView(ColorDot(this, target.color), LinearLayout.LayoutParams(dp(64), dp(64)))
         panel.addView(TextView(this).apply {
@@ -506,7 +506,7 @@ class MainActivity : Activity() {
         val tile = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             background = gradient("#536CB2", "#25375F", 20)
-            elevation = dp(12).toFloat(); setPadding(dp(5), dp(6), dp(5), dp(6))
+            elevation = dp(16).toFloat(); translationZ = dp(5).toFloat(); setPadding(dp(5), dp(6), dp(5), dp(6))
         }
         tile.addView(ColorDot(this, item.color), LinearLayout.LayoutParams(dp(52), dp(52)))
         if (withLabel) tile.addView(TextView(this).apply {
@@ -525,7 +525,7 @@ class MainActivity : Activity() {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             background = gradient(lighten(color), color, 22)
-            elevation = dp(14).toFloat(); isClickable = true; isFocusable = true
+            elevation = dp(18).toFloat(); translationZ = dp(6).toFloat(); isClickable = true; isFocusable = true
             addView(TextView(this@MainActivity).apply { text = emoji; textSize = 37f; gravity = Gravity.CENTER })
             addView(TextView(this@MainActivity).apply {
                 text = label; textSize = 15f; typeface = Typeface.DEFAULT_BOLD
@@ -539,6 +539,26 @@ class MainActivity : Activity() {
         text = value; textSize = 19f; typeface = Typeface.DEFAULT_BOLD
         setTextColor(AColor.rgb(226, 233, 255)); gravity = Gravity.CENTER
         setPadding(0, dp(5), 0, dp(5))
+    }
+
+    private fun install3DPress(view: View) {
+        view.stateListAnimator = null
+        view.elevation = dp(12).toFloat()
+        view.translationZ = dp(5).toFloat()
+        view.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.animate().scaleX(.965f).scaleY(.965f)
+                        .translationZ(dp(1).toFloat()).setDuration(85).start()
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.animate().scaleX(1f).scaleY(1f)
+                        .translationZ(dp(5).toFloat()).setDuration(170)
+                        .setInterpolator(android.view.animation.OvershootInterpolator(.7f)).start()
+                }
+            }
+            false
+        }
     }
 
     private fun navButton(label: String, action: () -> Unit) = Button(this).apply {
@@ -654,20 +674,11 @@ class MainActivity : Activity() {
     }
 
     private fun playThumbPop() {
-        val hand = ThumbPopView(this)
-        overlay.addView(hand, FrameLayout.LayoutParams(dp(220), dp(240), Gravity.CENTER))
-        hand.alpha = 0f
-        hand.scaleX = .22f; hand.scaleY = .22f
-        hand.translationY = dp(150).toFloat()
-        hand.animate().alpha(1f).scaleX(1.12f).scaleY(1.12f).translationY(dp(-28).toFloat())
-            .setDuration(420).setInterpolator(android.view.animation.OvershootInterpolator(1.0f))
-            .withEndAction {
-                hand.animate().scaleX(1f).scaleY(1f).translationY(dp(-45).toFloat())
-                    .setDuration(180).withEndAction {
-                        hand.animate().alpha(0f).translationY(dp(-150).toFloat()).setStartDelay(320)
-                            .setDuration(260).withEndAction { overlay.removeView(hand) }.start()
-                    }.start()
-            }.start()
+        val stars = ShootingStarsView(this)
+        overlay.addView(stars, FrameLayout.LayoutParams(dp(280), dp(250), Gravity.CENTER))
+        stars.start {
+            overlay.removeView(stars)
+        }
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
@@ -681,99 +692,79 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 
-    // Opaque, child-friendly cartoon glove. The thumb is visibly joined to the palm;
-    // four curled fingers form a fist, avoiding any ambiguous raised-finger silhouette.
-    private class ThumbPopView(context: Context) : View(context) {
-        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
-        private fun grad(x1: Float, y1: Float, x2: Float, y2: Float, c1: Int, c2: Int) {
-            p.style = Paint.Style.FILL
-            p.shader = LinearGradient(x1, y1, x2, y2, c1, c2, Shader.TileMode.CLAMP)
+    // A short burst of luminous shooting stars, replacing the thumbs-up graphic.
+    private class ShootingStarsView(context: Context) : View(context) {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private var progress = 0f
+        private val paths = listOf(
+            Triple(-78f, -48f, 0.92f),
+            Triple(8f, -78f, 1.08f),
+            Triple(76f, -18f, 0.82f),
+            Triple(-18f, 58f, 0.74f),
+            Triple(58f, 66f, 0.68f)
+        )
+
+        fun start(onFinished: () -> Unit) {
+            alpha = 1f
+            android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 920L
+                interpolator = android.view.animation.DecelerateInterpolator()
+                addUpdateListener {
+                    progress = it.animatedValue as Float
+                    invalidate()
+                }
+                addListener(object : android.animation.AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: android.animation.Animator) {
+                        onFinished()
+                    }
+                })
+                start()
+            }
         }
-        private fun solid(color: Int) { p.shader = null; p.style = Paint.Style.FILL; p.color = color; p.clearShadowLayer() }
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
+            val cx = width / 2f
+            val cy = height / 2f
+            val scale = resources.displayMetrics.density
             canvas.save()
-            canvas.scale(width / 220f, height / 240f)
-            canvas.rotate(-7f, 110f, 125f)
+            canvas.translate(cx, cy)
+            paths.forEachIndexed { index, item ->
+                val (sx, sy, size) = item
+                val travel = progress * 92f * scale
+                val x = sx * scale + travel * (if (index % 2 == 0) 1f else -0.72f)
+                val y = sy * scale - travel * (if (index % 2 == 0) 0.76f else 0.52f)
+                val fade = (1f - progress * 0.72f).coerceIn(0f, 1f)
+                val radius = (8f + size * 5f) * scale
 
-            solid(AColor.argb(95, 5, 12, 35))
-            canvas.drawOval(30f, 205f, 190f, 232f, p)
+                // Soft halo and a tapered luminous trail.
+                paint.style = Paint.Style.STROKE
+                paint.strokeCap = Paint.Cap.ROUND
+                paint.strokeWidth = 7f * scale
+                paint.color = AColor.argb((72 * fade).toInt(), 255, 220, 95)
+                canvas.drawLine(x - 26f * scale, y + 22f * scale, x, y, paint)
+                paint.strokeWidth = 2.5f * scale
+                paint.color = AColor.argb((210 * fade).toInt(), 255, 250, 205)
+                canvas.drawLine(x - 25f * scale, y + 21f * scale, x, y, paint)
 
-            // Blue sleeve and white cuff.
-            grad(72f, 184f, 148f, 238f, AColor.rgb(115, 177, 255), AColor.rgb(34, 73, 170))
-            canvas.drawRoundRect(66f, 179f, 157f, 239f, 22f, 22f, p)
-            solid(AColor.rgb(231, 241, 255))
-            canvas.drawRoundRect(67f, 178f, 157f, 195f, 8f, 8f, p)
-
-            // Single continuous hand silhouette with curled fingers and a side thumb.
-            val palm = Path().apply {
-                moveTo(76f, 190f)
-                cubicTo(62f, 184f, 55f, 171f, 59f, 154f)
-                lineTo(68f, 119f)
-                cubicTo(71f, 104f, 85f, 99f, 96f, 108f)
-                cubicTo(101f, 114f, 100f, 122f, 97f, 132f)
-                lineTo(94f, 143f)
-                cubicTo(104f, 137f, 115f, 138f, 121f, 147f)
-                cubicTo(133f, 136f, 149f, 140f, 153f, 153f)
-                cubicTo(169f, 148f, 181f, 161f, 178f, 175f)
-                cubicTo(175f, 194f, 151f, 205f, 123f, 205f)
-                lineTo(94f, 202f)
-                cubicTo(85f, 201f, 80f, 197f, 76f, 190f)
-                close()
+                paint.style = Paint.Style.FILL
+                paint.setShadowLayer(14f * scale, 0f, 0f, AColor.argb((180 * fade).toInt(), 255, 190, 48))
+                paint.color = AColor.argb((255 * fade).toInt(), 255, 246, 178)
+                val star = Path().apply {
+                    for (point in 0 until 10) {
+                        val angle = Math.PI * point / 5.0 - Math.PI / 2.0
+                        val r = if (point % 2 == 0) radius else radius * 0.43f
+                        val px = x + kotlin.math.cos(angle).toFloat() * r
+                        val py = y + kotlin.math.sin(angle).toFloat() * r
+                        if (point == 0) moveTo(px, py) else lineTo(px, py)
+                    }
+                    close()
+                }
+                canvas.drawPath(star, paint)
+                paint.clearShadowLayer()
+                paint.color = AColor.argb((230 * fade).toInt(), 255, 255, 255)
+                canvas.drawCircle(x - radius * .12f, y - radius * .18f, radius * .17f, paint)
             }
-            p.setShadowLayer(12f, 3f, 8f, AColor.argb(125, 5, 12, 35))
-            grad(65f, 105f, 170f, 205f, AColor.WHITE, AColor.rgb(183, 202, 235))
-            canvas.drawPath(palm, p)
-            p.clearShadowLayer(); p.shader = null
-
-            // Thumb: a separate rounded shape, rooted into the left edge of the palm.
-            val thumb = Path().apply {
-                moveTo(79f, 157f)
-                cubicTo(70f, 151f, 67f, 142f, 69f, 131f)
-                lineTo(76f, 73f)
-                cubicTo(78f, 55f, 91f, 46f, 104f, 51f)
-                cubicTo(117f, 56f, 120f, 69f, 116f, 84f)
-                lineTo(104f, 134f)
-                cubicTo(101f, 146f, 94f, 156f, 86f, 162f)
-                close()
-            }
-            p.setShadowLayer(6f, 1f, 4f, AColor.argb(75, 20, 35, 70))
-            grad(76f, 52f, 117f, 158f, AColor.WHITE, AColor.rgb(190, 208, 239))
-            canvas.drawPath(thumb, p)
-            p.clearShadowLayer(); p.shader = null
-
-            // Four rounded knuckles make the folded fingers readable.
-            val knuckles = arrayOf(
-                floatArrayOf(112f, 145f, 153f, 160f),
-                floatArrayOf(108f, 158f, 166f, 175f),
-                floatArrayOf(101f, 172f, 160f, 189f),
-                floatArrayOf(92f, 184f, 145f, 200f)
-            )
-            knuckles.forEachIndexed { i, k ->
-                p.setShadowLayer(2f, 0f, 2f, AColor.argb(45, 30, 50, 90))
-                grad(k[0], k[1], k[2], k[3], AColor.WHITE,
-                    AColor.rgb(194 - i * 3, 211 - i * 3, 239 - i * 2))
-                canvas.drawRoundRect(k[0], k[1], k[2], k[3], 10f, 10f, p)
-                p.clearShadowLayer(); p.shader = null
-            }
-
-            // Blue-gray contour, glove highlights and simple seam details.
-            p.style = Paint.Style.STROKE
-            p.strokeWidth = 3f
-            p.color = AColor.rgb(112, 139, 190)
-            canvas.drawPath(palm, p)
-            canvas.drawPath(thumb, p)
-            p.style = Paint.Style.FILL
-            solid(AColor.WHITE)
-            canvas.drawOval(85f, 59f, 97f, 87f, p)
-            canvas.drawOval(120f, 148f, 137f, 153f, p)
-            p.style = Paint.Style.STROKE
-            p.strokeWidth = 2f
-            p.color = AColor.rgb(163, 184, 220)
-            canvas.drawArc(82f, 110f, 101f, 137f, 35f, 105f, false, p)
-            canvas.drawArc(111f, 159f, 150f, 179f, 195f, 125f, false, p)
-            p.style = Paint.Style.FILL
             canvas.restore()
         }
     }
