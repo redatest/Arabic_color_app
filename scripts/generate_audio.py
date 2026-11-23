@@ -1,4 +1,5 @@
 import asyncio
+import shutil
 from pathlib import Path
 import edge_tts
 
@@ -57,7 +58,23 @@ async def main():
         await edge_tts.Communicate(text, voice=VOICE, rate=RATE).save(str(target))
         if not target.exists() or target.stat().st_size < 1000:
             raise RuntimeError(f"Invalid audio output: {target}")
-    print(f"Generated {len(CLIPS)} Arabic audio clips.")
+
+    # Prefer the user's own recordings for color names. These are bundled
+    # into the APK as color_<name>.mp3 and played fully offline.
+    sounds_dir = Path("sounds")
+    color_names = (
+        "red", "blue", "yellow", "green", "orange",
+        "pink", "purple", "black", "white", "brown",
+    )
+    for color in color_names:
+        source = sounds_dir / f"{color}.mp3"
+        target = OUT / f"color_{color}.mp3"
+        if not source.is_file() or source.stat().st_size < 1000:
+            raise RuntimeError(f"Missing or invalid user recording: {source}")
+        shutil.copy2(source, target)
+        print(f"Using supplied pronunciation: {source} -> {target}")
+
+    print(f"Generated {len(CLIPS)} Arabic audio clips and integrated {len(color_names)} supplied color recordings.")
 
 if __name__ == "__main__":
     asyncio.run(main())
